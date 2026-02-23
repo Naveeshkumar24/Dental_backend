@@ -18,7 +18,7 @@ func Register(
 ) {
 
 	// ================= AUTH =================
-	r.HandleFunc("/api/login", auth.Login).Methods("POST")
+	r.HandleFunc("/api/login", auth.Login).Methods("POST", "OPTIONS")
 
 	// ================= PUBLIC ROUTES =================
 	r.HandleFunc("/api/about", about.Get).Methods("GET")
