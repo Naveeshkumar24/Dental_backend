@@ -32,20 +32,10 @@ func main() {
 	r := mux.NewRouter()
 
 	// ===============================
-	// CORS MIDDLEWARE (GLOBAL)
+	// CORS MIDDLEWARE (THIS IS ENOUGH)
 	// ===============================
 	r.Use(middleware.CORS)
 	r.Use(mux.CORSMethodMiddleware(r))
-
-	// ===============================
-	// GLOBAL OPTIONS HANDLER (CRITICAL)
-	// ===============================
-	r.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
-		}
-	})
 
 	// ===============================
 	// HANDLERS
