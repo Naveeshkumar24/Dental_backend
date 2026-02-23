@@ -15,7 +15,7 @@ func CORS(next http.Handler) http.Handler {
 			"GET, POST, PUT, DELETE, OPTIONS",
 		)
 
-		// ✅ Handle preflight here ONLY
+		// ✅ Handle preflight properly
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)
 			return
