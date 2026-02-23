@@ -36,6 +36,12 @@ func main() {
 	// ===============================
 	r.Use(middleware.CORS)
 	r.Use(mux.CORSMethodMiddleware(r))
+	// 🔑 ALLOW OPTIONS FOR ALL ROUTES (CRITICAL FOR CORS)
+	r.MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) bool {
+		return r.Method == http.MethodOptions
+	}).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 
 	// ===============================
 	// HANDLERS
