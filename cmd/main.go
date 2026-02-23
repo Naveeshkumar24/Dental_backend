@@ -31,9 +31,6 @@ func main() {
 	// ✅ REQUIRED FOR CORS + OPTIONS
 	r.Use(middleware.CORS)
 	r.Use(mux.CORSMethodMiddleware(r))
-	r.Methods(http.MethodOptions).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNoContent)
-	})
 
 	// Handlers
 	authHandler := &handlers.AuthHandler{DB: db, Config: cfg}
