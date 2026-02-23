@@ -13,24 +13,46 @@ type CertificationHandler struct {
 	DB *sql.DB
 }
 
-// PUBLIC
+type Certification struct {
+	ID     int    `json:"id"`
+	Title  string `json:"title"`
+	Issuer string `json:"issuer"`
+	Year   int    `json:"year"`
+}
+
+// ==========================
+// PUBLIC: GET ALL
+// ==========================
 func (h *CertificationHandler) GetAll(w http.ResponseWriter, r *http.Request) {
-	rows, _ := h.DB.Query("SELECT id,title,issuer,year FROM certifications ORDER BY year DESC")
+	w.Header().Set("Content-Type", "application/json")
+
+	rows, err := h.DB.Query(
+		"SELECT id, title, issuer, year FROM certifications ORDER BY year DESC",
+	)
+	if err != nil {
+		json.NewEncoder(w).Encode([]Certification{})
+		return
+	}
 	defer rows.Close()
 
-	var list []map[string]interface{}
+	// ✅ initialize slice
+	list := []Certification{}
+
 	for rows.Next() {
-		var id, year int
-		var title, issuer string
-		rows.Scan(&id, &title, &issuer, &year)
-		list = append(list, map[string]interface{}{
-			"id": id, "title": title, "issuer": issuer, "year": year,
-		})
+		var c Certification
+		if err := rows.Scan(&c.ID, &c.Title, &c.Issuer, &c.Year); err != nil {
+			json.NewEncoder(w).Encode([]Certification{})
+			return
+		}
+		list = append(list, c)
 	}
+
 	json.NewEncoder(w).Encode(list)
 }
 
-// ADMIN
+// ==========================
+// ADMIN: CREATE
+// ==========================
 func (h *CertificationHandler) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -65,6 +87,9 @@ func (h *CertificationHandler) Create(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// ==========================
+// ADMIN: DELETE
+// ==========================
 func (h *CertificationHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -80,7 +105,6 @@ func (h *CertificationHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ✅ RETURN JSON
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Certification deleted",
 	})

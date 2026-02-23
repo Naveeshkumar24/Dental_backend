@@ -15,6 +15,14 @@ type BlogHandler struct {
 	DB *sql.DB
 }
 
+type Blog struct {
+	ID        int       `json:"id"`
+	Title     string    `json:"title"`
+	Slug      string    `json:"slug"`
+	Content   string    `json:"content,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 // ==========================
 // GET ALL BLOGS (PUBLIC)
 // ==========================
@@ -27,29 +35,27 @@ func (h *BlogHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 		ORDER BY created_at DESC
 	`)
 	if err != nil {
-		http.Error(w, "Failed to fetch blogs", http.StatusInternalServerError)
+		json.NewEncoder(w).Encode([]Blog{})
 		return
 	}
 	defer rows.Close()
 
-	var blogs []map[string]interface{}
+	// ✅ IMPORTANT: initialize empty slice
+	blogs := []Blog{}
 
 	for rows.Next() {
-		var id int
-		var title, slug string
-		var createdAt time.Time
-
-		if err := rows.Scan(&id, &title, &slug, &createdAt); err != nil {
-			http.Error(w, "Failed to parse blog", http.StatusInternalServerError)
+		var b Blog
+		if err := rows.Scan(&b.ID, &b.Title, &b.Slug, &b.CreatedAt); err != nil {
+			json.NewEncoder(w).Encode([]Blog{})
 			return
 		}
+		blogs = append(blogs, b)
+	}
 
-		blogs = append(blogs, map[string]interface{}{
-			"id":         id,
-			"title":      title,
-			"slug":       slug,
-			"created_at": createdAt,
-		})
+	// ✅ check iteration error
+	if err := rows.Err(); err != nil {
+		json.NewEncoder(w).Encode([]Blog{})
+		return
 	}
 
 	json.NewEncoder(w).Encode(blogs)
@@ -63,13 +69,7 @@ func (h *BlogHandler) GetBySlug(w http.ResponseWriter, r *http.Request) {
 
 	slug := mux.Vars(r)["slug"]
 
-	var blog struct {
-		ID        int       `json:"id"`
-		Title     string    `json:"title"`
-		Slug      string    `json:"slug"`
-		Content   string    `json:"content"`
-		CreatedAt time.Time `json:"created_at"`
-	}
+	var blog Blog
 
 	err := h.DB.QueryRow(`
 		SELECT id, title, slug, content, created_at
@@ -98,9 +98,6 @@ func (h *BlogHandler) GetBySlug(w http.ResponseWriter, r *http.Request) {
 // ==========================
 // CREATE BLOG (ADMIN)
 // ==========================
-// ==========================
-// CREATE BLOG (ADMIN)
-// ==========================
 func (h *BlogHandler) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -121,13 +118,7 @@ func (h *BlogHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	slug := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(req.Title), " ", "-"))
 
-	var blog struct {
-		ID        int       `json:"id"`
-		Title     string    `json:"title"`
-		Slug      string    `json:"slug"`
-		Content   string    `json:"content"`
-		CreatedAt time.Time `json:"created_at"`
-	}
+	var blog Blog
 
 	err := h.DB.QueryRow(`
 		INSERT INTO blogs (title, slug, content)
