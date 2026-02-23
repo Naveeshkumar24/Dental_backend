@@ -16,32 +16,27 @@ import (
 )
 
 func main() {
-	// Load environment variables (local only)
 	_ = godotenv.Load()
-
-	// Load config
 	cfg := config.Load()
 
-	// Connect database
 	db, err := database.Connect(cfg.DBUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Create router
 	r := mux.NewRouter()
 
 	// ===============================
-	// CORS MIDDLEWARE (THIS IS ENOUGH)
+	// CORS MIDDLEWARE
 	// ===============================
 	r.Use(middleware.CORS)
-	r.Use(mux.CORSMethodMiddleware(r))
-	// 🔑 ALLOW OPTIONS FOR ALL ROUTES (CRITICAL FOR CORS)
-	r.MatcherFunc(func(r *http.Request, rm *mux.RouteMatch) bool {
-		return r.Method == http.MethodOptions
-	}).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+	// ===============================
+	// 🔥 GLOBAL OPTIONS ROUTE (FIX)
+	// ===============================
+	r.HandleFunc("/{path:.*}", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-	})
+	}).Methods(http.MethodOptions)
 
 	// ===============================
 	// HANDLERS
@@ -65,9 +60,6 @@ func main() {
 		cfg.JWTSecret,
 	)
 
-	// ===============================
-	// START SERVER
-	// ===============================
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
