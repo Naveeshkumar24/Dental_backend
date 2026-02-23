@@ -16,8 +16,10 @@ import (
 )
 
 func main() {
-	// Load environment variables
+	// Load environment variables (local only)
 	_ = godotenv.Load()
+
+	// Load config
 	cfg := config.Load()
 
 	// Connect database
@@ -26,21 +28,37 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Router
+	// Create router
 	r := mux.NewRouter()
 
-	// ✅ REQUIRED FOR CORS + OPTIONS
+	// ===============================
+	// CORS MIDDLEWARE (GLOBAL)
+	// ===============================
 	r.Use(middleware.CORS)
 	r.Use(mux.CORSMethodMiddleware(r))
 
-	// Handlers
+	// ===============================
+	// GLOBAL OPTIONS HANDLER (CRITICAL)
+	// ===============================
+	r.PathPrefix("/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+	})
+
+	// ===============================
+	// HANDLERS
+	// ===============================
 	authHandler := &handlers.AuthHandler{DB: db, Config: cfg}
 	blogHandler := &handlers.BlogHandler{DB: db}
 	aboutHandler := &handlers.AboutHandler{DB: db}
 	certHandler := &handlers.CertificationHandler{DB: db}
 	queryHandler := &handlers.QueryHandler{DB: db}
 
-	// Routes
+	// ===============================
+	// ROUTES
+	// ===============================
 	routes.Register(
 		r,
 		authHandler,
@@ -51,13 +69,14 @@ func main() {
 		cfg.JWTSecret,
 	)
 
-	// Start server
+	// ===============================
+	// START SERVER
+	// ===============================
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080" // local fallback
+		port = "8080"
 	}
 
 	log.Println("Server running on :" + port)
 	log.Fatal(http.ListenAndServe(":"+port, r))
-
 }
